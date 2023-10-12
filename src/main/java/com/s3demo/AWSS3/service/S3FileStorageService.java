@@ -1,5 +1,6 @@
 package com.s3demo.AWSS3.service;
 
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.PutObjectRequest;
@@ -65,4 +66,13 @@ public class S3FileStorageService {
         return uniqueFileName;
     }
 
+    public boolean deleteFile(String fileName) {
+        try {
+            amazonS3.deleteObject(bucketName,fileName);
+            return true;
+        }catch (Exception e){
+        e.printStackTrace();
+            return false;
+        }
+    }
 }

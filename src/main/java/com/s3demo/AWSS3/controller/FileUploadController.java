@@ -23,9 +23,17 @@ public class FileUploadController {
         if (file.isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("File is empty. Please select a file to upload.");
         }
-
         String uploadedFileName = fileStorageService.uploadFile(file);
-
         return ResponseEntity.ok("File uploaded successfully. Unique file name: " + uploadedFileName);
+    }
+    @DeleteMapping("/delete/{fileName}")
+    public ResponseEntity<String> deleteFile(@PathVariable String fileName){
+       boolean delete= fileStorageService.deleteFile(fileName);
+       if (delete){
+           return ResponseEntity.ok("File '" + fileName + "' has been deleted from the S3 bucket.");
+       }else {
+           return ResponseEntity.notFound().build();
+
+       }
     }
 }
