@@ -1,6 +1,8 @@
 package com.s3demo.AWSS3.controller;
 
+import com.s3demo.AWSS3.dto.ResponseMetaData;
 import com.s3demo.AWSS3.service.S3FileStorageService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -9,6 +11,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/files")
+@Slf4j
 public class FileUploadController {
 
     private final S3FileStorageService fileStorageService;
@@ -19,21 +22,32 @@ public class FileUploadController {
     }
 
     @PostMapping("/upload")
-    public ResponseEntity<String> uploadFile(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<ResponseMetaData> uploadFile(@RequestParam("file") MultipartFile file) {
         if (file.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("File is empty. Please select a file to upload.");
-        }
-        String uploadedFileName = fileStorageService.uploadFile(file);
-        return ResponseEntity.ok("File uploaded successfully. Unique file name: " + uploadedFileName);
-    }
-    @DeleteMapping("/delete/{fileName}")
-    public ResponseEntity<String> deleteFile(@PathVariable String fileName){
-       boolean delete= fileStorageService.deleteFile(fileName);
-       if (delete){
-           return ResponseEntity.ok("File '" + fileName + "' has been deleted from the S3 bucket.");
-       }else {
-           return ResponseEntity.notFound().build();
+            log.info("file is empty "+file.getOriginalFilename());
 
-       }
+            return new ResponseEntity<>(ResponseMetaData.builder().msg("File is empty").build(), HttpStatus.BAD_REQUEST);
+        }
+
+        try {
+            log.info("file is now ready to upload "+file.getOriginalFilename());
+            ResponseMetaData responseMetaData = fileStorageService.uploadFile(file);
+            return ResponseEntity.ok(responseMetaData);
+        } catch (RuntimeException e) {
+            return new ResponseEntity<>(ResponseMetaData.builder().msg("Failed to upload file: " + e.getMessage()).build(),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+
+    @DeleteMapping("/delete/{fileName}")
+    public ResponseEntity<String> deleteFile(@PathVariable String fileName) {
+        boolean delete = fileStorageService.deleteFile(fileName);
+        if (delete) {
+            return ResponseEntity.ok("File '" + fileName + "' has been deleted from the S3 bucket.");
+        } else {
+            return ResponseEntity.notFound().build();
+
+        }
     }
 }
